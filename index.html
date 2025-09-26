@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>100 DSA Problems Tracker - Enhanced</title>
+  <title>100 DSA Problems Tracker - Password Protected</title>
   <style>
     body{
       font-family:system-ui,Segoe UI,Arial;
@@ -106,17 +106,16 @@
     .card.solved{
       border-color:#27ae60;
       background:linear-gradient(135deg,#d4edda,#c3e6cb);
-      cursor:not-allowed;
     }
     
     .card.solved:hover{
-      transform:none;
-      border-color:#27ae60;
-      box-shadow:none;
+      border-color:#e74c3c;
+      transform:translateY(-2px);
+      box-shadow:0 4px 15px rgba(231,76,60,0.2);
     }
     
     .card.solved::before{
-      content:'✓ LOCKED';
+      content:'✓ SOLVED';
       position:absolute;
       top:8px;
       right:8px;
@@ -127,6 +126,17 @@
       padding:2px 6px;
       border-radius:10px;
       border:1px solid #27ae60;
+    }
+    
+    .card.locked{
+      opacity:0.7;
+      cursor:not-allowed;
+    }
+    
+    .card.locked:hover{
+      transform:none;
+      box-shadow:none;
+      border-color:#e9ecef;
     }
     
     .problem-number{
@@ -161,6 +171,7 @@
       gap:12px;
       margin:20px 0;
       flex-wrap:wrap;
+      align-items:center;
     }
     
     button{
@@ -211,6 +222,15 @@
     
     .btn-secondary:hover{
       background:#7f8c8d;
+    }
+    
+    .btn-warning{
+      background:#f39c12;
+      color:white;
+    }
+    
+    .btn-warning:hover{
+      background:#e67e22;
     }
     
     footer{
@@ -307,14 +327,37 @@
       justify-content:flex-end;
       margin-top:20px;
     }
+    
+    .lock-status{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:14px;
+      font-weight:500;
+    }
+    
+    .lock-status.locked{
+      color:#e74c3c;
+    }
+    
+    .lock-status.unlocked{
+      color:#27ae60;
+    }
+    
+    .session-info{
+      font-size:12px;
+      color:#7f8c8d;
+      margin-left:10px;
+    }
   </style>
 </head>
 <body>
   <header>
     <div>
-      <h1>🚀 100 DSA Problems Tracker</h1>
+      <h1>🔒 100 DSA Problems Tracker</h1>
       <div class="tip">
         <strong>Daily Target:</strong> Solve 14-15 problems/day to finish in 7 days!
+        <br><strong>Security:</strong> Password required for all problem state changes
       </div>
     </div>
     <div class="stats">
@@ -336,6 +379,8 @@
   <div id="progress"><div id="bar"></div></div>
 
   <div class="controls">
+    <button class="btn-warning" id="toggleLock">🔓 Unlock Editing</button>
+    <span class="session-info" id="sessionInfo">Click to authenticate and enable editing</span>
     <button class="btn-success" id="markAll">✓ Mark All as Solved</button>
     <button class="btn-danger" id="clear">🗑️ Clear All Progress</button>
     <button class="btn-primary" id="export">📁 Export Progress</button>
@@ -354,28 +399,34 @@
 
   <footer>
     <p><strong>💾 Auto-Save:</strong> Your progress is automatically saved when you check/uncheck problems!</p>
-    <p><strong>🔒 Security:</strong> Clear progress is password protected </p>
+    <p><strong>🔒 Security:</strong> All editing operations are password protected</p>
+    <p><strong>⏱️ Session:</strong> Authentication expires after 5 minutes of inactivity</p>
   </footer>
 
   <!-- Password Modal -->
   <div id="passwordModal" class="modal hidden">
     <div class="modal-content">
       <h3>🔐 Enter Password</h3>
-      <p>This action requires password verification:</p>
+      <p id="passwordPrompt">Authentication required to modify problem states:</p>
       <input type="password" id="passwordInput" placeholder="Enter password">
       <div class="modal-buttons">
         <button class="btn-secondary" id="cancelPassword">Cancel</button>
-        <button class="btn-danger" id="confirmPassword">Confirm</button>
+        <button class="btn-primary" id="confirmPassword">Authenticate</button>
       </div>
     </div>
   </div>
 
 <script>
-const STORAGE_KEY = 'dsa100_progress_v2';
+const STORAGE_KEY = 'dsa100_progress_v3';
 const CORRECT_PASSWORD = 'surendar@123';
+const SESSION_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
+
 let state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
 let currentFilter = 'all';
 let pendingAction = null;
+let pendingProblemNum = null;
+let isAuthenticated = false;
+let sessionTimer = null;
 
 // Initialize state if empty
 if (Object.keys(state).length === 0) {
@@ -388,6 +439,37 @@ if (Object.keys(state).length === 0) {
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   refreshUI();
+}
+
+function startSessionTimer() {
+  clearTimeout(sessionTimer);
+  sessionTimer = setTimeout(() => {
+    isAuthenticated = false;
+    updateLockUI();
+    showNotification('🔒 Session expired. Please authenticate again.', 'warning');
+  }, SESSION_TIMEOUT);
+}
+
+function updateLockUI() {
+  const lockBtn = document.getElementById('toggleLock');
+  const sessionInfo = document.getElementById('sessionInfo');
+  const cards = document.querySelectorAll('.card');
+  
+  if (isAuthenticated) {
+    lockBtn.textContent = '🔓 Editing Unlocked';
+    lockBtn.className = 'btn-success';
+    sessionInfo.textContent = 'Editing enabled - Auto-lock in 5 minutes';
+    sessionInfo.style.color = '#27ae60';
+    
+    cards.forEach(card => card.classList.remove('locked'));
+  } else {
+    lockBtn.textContent = '🔒 Unlock Editing';
+    lockBtn.className = 'btn-warning';
+    sessionInfo.textContent = 'Click to authenticate and enable editing';
+    sessionInfo.style.color = '#7f8c8d';
+    
+    cards.forEach(card => card.classList.add('locked'));
+  }
 }
 
 function createGrid() {
@@ -406,6 +488,10 @@ function createGrid() {
       card.classList.add('solved');
     }
     
+    if (!isAuthenticated) {
+      card.classList.add('locked');
+    }
+    
     card.innerHTML = `
       <div class="problem-number">Problem ${i}</div>
       <input type="text" 
@@ -420,6 +506,11 @@ function createGrid() {
 }
 
 function toggleProblem(problemNum) {
+  if (!isAuthenticated) {
+    showPasswordModal('toggle', problemNum);
+    return;
+  }
+  
   const id = `p${problemNum}`;
   const currentState = state[id].done;
   
@@ -430,16 +521,25 @@ function toggleProblem(problemNum) {
   const card = document.querySelector(`[data-problem-id="${problemNum}"]`);
   if(state[id].done) {
     card.classList.add('solved');
+    showNotification(`✅ Problem ${problemNum} marked as solved!`, 'success');
   } else {
     card.classList.remove('solved');
+    showNotification(`↩️ Problem ${problemNum} marked as unsolved!`, 'info');
   }
   
   saveState();
+  startSessionTimer(); // Reset session timer on activity
 }
 
 function updateNote(problemId, note) {
+  if (!isAuthenticated) {
+    showNotification('🔒 Please authenticate to edit notes', 'warning');
+    return;
+  }
+  
   state[problemId].note = note.trim();
   saveState();
+  startSessionTimer(); // Reset session timer on activity
 }
 
 function refreshUI() {
@@ -484,9 +584,24 @@ function applyFilter() {
   });
 }
 
-function showPasswordModal(action) {
+function showPasswordModal(action, problemNum = null) {
   pendingAction = action;
-  document.getElementById('passwordModal').classList.remove('hidden');
+  pendingProblemNum = problemNum;
+  
+  const modal = document.getElementById('passwordModal');
+  const prompt = document.getElementById('passwordPrompt');
+  
+  if (action === 'toggle' && problemNum) {
+    const currentState = state[`p${problemNum}`].done;
+    const actionText = currentState ? 'unmark' : 'mark as solved';
+    prompt.textContent = `Authentication required to ${actionText} Problem ${problemNum}:`;
+  } else if (action === 'unlock') {
+    prompt.textContent = 'Authentication required to unlock editing mode:';
+  } else {
+    prompt.textContent = 'This action requires password verification:';
+  }
+  
+  modal.classList.remove('hidden');
   document.getElementById('passwordInput').focus();
 }
 
@@ -494,6 +609,7 @@ function hidePasswordModal() {
   document.getElementById('passwordModal').classList.add('hidden');
   document.getElementById('passwordInput').value = '';
   pendingAction = null;
+  pendingProblemNum = null;
 }
 
 function executeProtectedAction() {
@@ -504,10 +620,20 @@ function executeProtectedAction() {
       clearAllProgress();
     } else if(pendingAction === 'markAll') {
       markAllSolved();
+    } else if(pendingAction === 'toggle' && pendingProblemNum) {
+      isAuthenticated = true;
+      updateLockUI();
+      startSessionTimer();
+      toggleProblem(pendingProblemNum);
+    } else if(pendingAction === 'unlock') {
+      isAuthenticated = true;
+      updateLockUI();
+      startSessionTimer();
+      showNotification('🔓 Editing mode unlocked for 5 minutes!', 'success');
     }
     hidePasswordModal();
   } else {
-    alert('❌ Incorrect password! Please try again.');
+    showNotification('❌ Incorrect password! Please try again.', 'error');
     document.getElementById('passwordInput').value = '';
     document.getElementById('passwordInput').focus();
   }
@@ -519,7 +645,7 @@ function clearAllProgress() {
   }
   saveState();
   createGrid();
-  alert('✅ All progress cleared successfully!');
+  showNotification('✅ All progress cleared successfully!', 'success');
 }
 
 function markAllSolved() {
@@ -530,19 +656,64 @@ function markAllSolved() {
   }
   saveState();
   createGrid();
-  alert('🎉 All problems marked as solved!');
+  showNotification('🎉 All problems marked as solved!', 'success');
+}
+
+function showNotification(message, type = 'info') {
+  const colors = {
+    success: '#27ae60',
+    error: '#e74c3c',
+    warning: '#f39c12',
+    info: '#3498db'
+  };
+  
+  let notification = document.getElementById('notification');
+  if(!notification) {
+    notification = document.createElement('div');
+    notification.id = 'notification';
+    notification.style.cssText = `
+      position:fixed;
+      top:20px;
+      right:20px;
+      padding:12px 18px;
+      border-radius:8px;
+      font-size:14px;
+      font-weight:500;
+      z-index:1001;
+      opacity:0;
+      transition:opacity 0.3s ease;
+      max-width:300px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.15);
+    `;
+    document.body.appendChild(notification);
+  }
+  
+  notification.textContent = message;
+  notification.style.background = colors[type];
+  notification.style.color = 'white';
+  notification.style.opacity = '1';
+  
+  setTimeout(() => {
+    notification.style.opacity = '0';
+  }, 3000);
 }
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
   createGrid();
   refreshUI();
+  updateLockUI();
 });
 
 // Grid click handler
 document.getElementById('grid').addEventListener('click', function(e) {
   const card = e.target.closest('.card');
-  if(!card) return;
+  if(!card || card.classList.contains('locked')) {
+    if (!isAuthenticated) {
+      showNotification('🔒 Please unlock editing mode first', 'warning');
+    }
+    return;
+  }
   
   const problemNum = parseInt(card.dataset.problemId);
   toggleProblem(problemNum);
@@ -553,6 +724,26 @@ document.getElementById('grid').addEventListener('input', function(e) {
   if(e.target.matches('input[type="text"]')) {
     const problemId = e.target.dataset.id.replace('_note', '');
     updateNote(problemId, e.target.value);
+  }
+});
+
+// Note input focus handler (to show auth warning)
+document.getElementById('grid').addEventListener('focus', function(e) {
+  if(e.target.matches('input[type="text"]') && !isAuthenticated) {
+    showNotification('🔒 Please unlock editing mode to modify notes', 'warning');
+    e.target.blur();
+  }
+}, true);
+
+// Toggle lock button
+document.getElementById('toggleLock').addEventListener('click', function() {
+  if (isAuthenticated) {
+    isAuthenticated = false;
+    clearTimeout(sessionTimer);
+    updateLockUI();
+    showNotification('🔒 Editing mode locked', 'info');
+  } else {
+    showPasswordModal('unlock');
   }
 });
 
@@ -595,7 +786,7 @@ document.getElementById('export').addEventListener('click', function() {
   a.click();
   URL.revokeObjectURL(url);
   
-  alert('📁 Progress exported successfully!');
+  showNotification('📁 Progress exported successfully!', 'success');
 });
 
 document.getElementById('importBtn').addEventListener('click', function() {
@@ -628,13 +819,13 @@ document.getElementById('importFile').addEventListener('change', async function(
         
         saveState();
         createGrid();
-        alert('✅ Progress imported successfully!');
+        showNotification('✅ Progress imported successfully!', 'success');
       }
     } else {
-      alert('❌ Invalid file format. Please select a valid progress file.');
+      showNotification('❌ Invalid file format. Please select a valid progress file.', 'error');
     }
   } catch(error) {
-    alert('❌ Failed to import: ' + error.message);
+    showNotification('❌ Failed to import: ' + error.message, 'error');
   }
   
   // Reset file input
@@ -671,50 +862,26 @@ document.addEventListener('keydown', function(e) {
         e.preventDefault();
         document.getElementById('searchBox').focus();
         break;
+      case 'l':
+        e.preventDefault();
+        document.getElementById('toggleLock').click();
+        break;
     }
   }
 });
 
-// Auto-save notification
-let saveTimeout;
-function showSaveNotification() {
-  clearTimeout(saveTimeout);
-  
-  // Create or update notification
-  let notification = document.getElementById('saveNotification');
-  if(!notification) {
-    notification = document.createElement('div');
-    notification.id = 'saveNotification';
-    notification.style.cssText = `
-      position:fixed;
-      top:20px;
-      right:20px;
-      background:#27ae60;
-      color:white;
-      padding:10px 15px;
-      border-radius:8px;
-      font-size:14px;
-      z-index:1000;
-      opacity:0;
-      transition:opacity 0.3s ease;
-    `;
-    document.body.appendChild(notification);
+// Reset session timer on any user activity
+document.addEventListener('click', function() {
+  if (isAuthenticated) {
+    startSessionTimer();
   }
-  
-  notification.textContent = '💾 Progress saved!';
-  notification.style.opacity = '1';
-  
-  saveTimeout = setTimeout(() => {
-    notification.style.opacity = '0';
-  }, 2000);
-}
+});
 
-// Override saveState to show notification
-const originalSaveState = saveState;
-saveState = function() {
-  originalSaveState();
-  showSaveNotification();
-};
+document.addEventListener('keypress', function() {
+  if (isAuthenticated) {
+    startSessionTimer();
+  }
+});
 </script>
 </body>
 </html>
