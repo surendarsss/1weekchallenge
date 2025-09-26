@@ -1326,6 +1326,84 @@ document.addEventListener('touchmove', function(e) {
     e.preventDefault();
   }
 }, {passive: false});
+  // Disable right-click
+document.addEventListener('contextmenu', function(e) {
+  e.preventDefault();
+  showNotification('🚫 Right-click disabled', 'warning');
+  return false;
+});
+
+// Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, Ctrl+Shift+C
+document.addEventListener('keydown', function(e) {
+  // F12
+  if(e.key === 'F12') {
+    e.preventDefault();
+    showNotification('🚫 Developer tools disabled', 'warning');
+    return false;
+  }
+  
+  // Ctrl+Shift+I (Inspector)
+  if(e.ctrlKey && e.shiftKey && e.key === 'I') {
+    e.preventDefault();
+    showNotification('🚫 Developer tools disabled', 'warning');
+    return false;
+  }
+  
+  // Ctrl+Shift+J (Console)
+  if(e.ctrlKey && e.shiftKey && e.key === 'J') {
+    e.preventDefault();
+    showNotification('🚫 Developer tools disabled', 'warning');
+    return false;
+  }
+  
+  // Ctrl+Shift+C (Element selector)
+  if(e.ctrlKey && e.shiftKey && e.key === 'C') {
+    e.preventDefault();
+    showNotification('🚫 Developer tools disabled', 'warning');
+    return false;
+  }
+  
+  // Ctrl+U (View source)
+  if(e.ctrlKey && e.key === 'u') {
+    e.preventDefault();
+    showNotification('🚫 View source disabled', 'warning');
+    return false;
+  }
+});
+
+// Detect if DevTools is open
+(function() {
+  const element = new Image();
+  Object.defineProperty(element, 'id', {
+    get: function() {
+      showNotification('🚫 Developer tools detected', 'error');
+      throw new Error('DevTools detected');
+    }
+  });
+  setInterval(function() {
+    console.log(element);
+    console.clear();
+  }, 1000);
+})();
+
+// Disable text selection for the entire page
+document.addEventListener('selectstart', function(e) {
+  if(!e.target.matches('input[type="text"], input[type="password"], textarea')) {
+    e.preventDefault();
+  }
+});
+
+// Disable copy
+document.addEventListener('copy', function(e) {
+  if(!e.target.matches('input[type="text"], input[type="password"], textarea')) {
+    e.preventDefault();
+    showNotification('🚫 Copy disabled', 'warning');
+  }
+});
+
+const STORAGE_KEY = 'dsa100_progress_v4';
+const CORRECT_PASSWORD = 'surendar@123';
+const SESSION_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
 </script>
 </body>
 </html>
