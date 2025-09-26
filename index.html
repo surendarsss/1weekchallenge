@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>100 DSA Problems Tracker - Enhanced</title>
+  <style>
+    body{
+      font-family:system-ui,Segoe UI,Arial;
+      max-width:1000px;
+      margin:24px auto;
+      padding:16px;
+      background:#f8f9fa;
+    }
+    
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      background:white;
+      padding:20px;
+      border-radius:12px;
+      box-shadow:0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom:20px;
+    }
+    
+    h1{
+      font-size:24px;
+      margin:0;
+      color:#2c3e50;
+    }
+    
+    .stats{
+      display:flex;
+      gap:20px;
+      align-items:center;
+    }
+    
+    .stat-item{
+      text-align:center;
+    }
+    
+    .stat-number{
+      font-size:20px;
+      font-weight:bold;
+      color:#27ae60;
+    }
+    
+    .stat-label{
+      font-size:12px;
+      color:#7f8c8d;
+      text-transform:uppercase;
+    }
+    
+    #progress{
+      width:100%;
+      height:20px;
+      background:#e9ecef;
+      border-radius:10px;
+      overflow:hidden;
+      margin:20px 0;
+      box-shadow:inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    #bar{
+      height:100%;
+      width:0%;
+      background:linear-gradient(90deg,#4caf50,#8bc34a);
+      transition:width 0.3s ease;
+      position:relative;
+    }
+    
+    #bar::after{
+      content:'';
+      position:absolute;
+      top:0;
+      left:0;
+      right:0;
+      bottom:0;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3));
+    }
+    
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+      gap:12px;
+      margin:20px 0;
+    }
+    
+    .card{
+      padding:12px;
+      border:2px solid #e9ecef;
+      border-radius:12px;
+      background:white;
+      cursor:pointer;
+      transition:all 0.2s ease;
+      position:relative;
+    }
+    
+    .card:hover{
+      border-color:#3498db;
+      transform:translateY(-2px);
+      box-shadow:0 4px 15px rgba(52,152,219,0.2);
+    }
+    
+    .card.solved{
+      border-color:#27ae60;
+      background:linear-gradient(135deg,#d4edda,#c3e6cb);
+      cursor:not-allowed;
+    }
+    
+    .card.solved:hover{
+      transform:none;
+      border-color:#27ae60;
+      box-shadow:none;
+    }
+    
+    .card.solved::before{
+      content:'✓ LOCKED';
+      position:absolute;
+      top:8px;
+      right:8px;
+      color:#27ae60;
+      font-weight:bold;
+      font-size:12px;
+      background:rgba(39,174,96,0.1);
+      padding:2px 6px;
+      border-radius:10px;
+      border:1px solid #27ae60;
+    }
+    
+    .problem-number{
+      font-size:16px;
+      font-weight:bold;
+      color:#2c3e50;
+      margin-bottom:8px;
+    }
+    
+    .card.solved .problem-number{
+      color:#155724;
+    }
+    
+    input[type="text"]{
+      width:100%;
+      padding:8px;
+      margin-top:8px;
+      border:1px solid #dee2e6;
+      border-radius:6px;
+      font-size:12px;
+      box-sizing:border-box;
+    }
+    
+    input[type="text"]:focus{
+      outline:none;
+      border-color:#3498db;
+      box-shadow:0 0 0 2px rgba(52,152,219,0.2);
+    }
+    
+    .controls{
+      display:flex;
+      gap:12px;
+      margin:20px 0;
+      flex-wrap:wrap;
+    }
+    
+    button{
+      padding:10px 16px;
+      border-radius:8px;
+      border:none;
+      cursor:pointer;
+      font-weight:500;
+      transition:all 0.2s ease;
+      font-size:14px;
+    }
+    
+    button:hover{
+      transform:translateY(-1px);
+    }
+    
+    .btn-primary{
+      background:#3498db;
+      color:white;
+    }
+    
+    .btn-primary:hover{
+      background:#2980b9;
+    }
+    
+    .btn-success{
+      background:#27ae60;
+      color:white;
+    }
+    
+    .btn-success:hover{
+      background:#219a52;
+    }
+    
+    .btn-danger{
+      background:#e74c3c;
+      color:white;
+    }
+    
+    .btn-danger:hover{
+      background:#c0392b;
+    }
+    
+    .btn-secondary{
+      background:#95a5a6;
+      color:white;
+    }
+    
+    .btn-secondary:hover{
+      background:#7f8c8d;
+    }
+    
+    footer{
+      margin-top:30px;
+      padding:20px;
+      background:white;
+      border-radius:12px;
+      font-size:13px;
+      color:#7f8c8d;
+      text-align:center;
+    }
+    
+    .filter-controls{
+      display:flex;
+      gap:10px;
+      margin:15px 0;
+      flex-wrap:wrap;
+    }
+    
+    .filter-btn{
+      padding:6px 12px;
+      border:1px solid #dee2e6;
+      border-radius:20px;
+      background:white;
+      cursor:pointer;
+      font-size:12px;
+      transition:all 0.2s ease;
+    }
+    
+    .filter-btn.active{
+      background:#3498db;
+      color:white;
+      border-color:#3498db;
+    }
+    
+    .tip{
+      background:white;
+      padding:15px;
+      border-radius:10px;
+      margin:15px 0;
+      border-left:4px solid #3498db;
+    }
+    
+    .search-box{
+      width:200px;
+      padding:8px 12px;
+      border:1px solid #dee2e6;
+      border-radius:20px;
+      margin-left:auto;
+    }
+    
+    .hidden{
+      display:none!important;
+    }
+    
+    .modal{
+      position:fixed;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      background:rgba(0,0,0,0.5);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:1000;
+    }
+    
+    .modal-content{
+      background:white;
+      padding:30px;
+      border-radius:12px;
+      max-width:400px;
+      width:90%;
+    }
+    
+    .modal h3{
+      margin-top:0;
+      color:#2c3e50;
+    }
+    
+    .modal input{
+      width:100%;
+      padding:12px;
+      margin:10px 0;
+      border:1px solid #dee2e6;
+      border-radius:6px;
+      box-sizing:border-box;
+    }
+    
+    .modal-buttons{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      margin-top:20px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>🚀 100 DSA Problems Tracker</h1>
+      <div class="tip">
+        <strong>Daily Target:</strong> Solve 14-15 problems/day to finish in 7 days!
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat-item">
+        <div class="stat-number" id="count">0</div>
+        <div class="stat-label">Solved</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" id="remaining">100</div>
+        <div class="stat-label">Remaining</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" id="percentage">0%</div>
+        <div class="stat-label">Progress</div>
+      </div>
+    </div>
+  </header>
+
+  <div id="progress"><div id="bar"></div></div>
+
+  <div class="controls">
+    <button class="btn-success" id="markAll">✓ Mark All as Solved</button>
+    <button class="btn-danger" id="clear">🗑️ Clear All Progress</button>
+    <button class="btn-primary" id="export">📁 Export Progress</button>
+    <button class="btn-secondary" id="importBtn">📂 Import Progress</button>
+    <input id="importFile" type="file" accept="application/json" style="display:none" />
+  </div>
+
+  <div class="filter-controls">
+    <button class="filter-btn active" data-filter="all">All (100)</button>
+    <button class="filter-btn" data-filter="solved">Solved (<span id="solvedCount">0</span>)</button>
+    <button class="filter-btn" data-filter="unsolved">Unsolved (<span id="unsolvedCount">100</span>)</button>
+    <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search problems...">
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <footer>
+    <p><strong>💾 Auto-Save:</strong> Your progress is automatically saved when you check/uncheck problems!</p>
+    <p><strong>🔒 Security:</strong> Clear progress is password protected (surendar@123)</p>
+    <p><strong>🌐 Hosting:</strong> Save as <code>index.html</code> and host on GitHub Pages, Netlify, or any static host</p>
+  </footer>
+
+  <!-- Password Modal -->
+  <div id="passwordModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>🔐 Enter Password</h3>
+      <p>This action requires password verification:</p>
+      <input type="password" id="passwordInput" placeholder="Enter password">
+      <div class="modal-buttons">
+        <button class="btn-secondary" id="cancelPassword">Cancel</button>
+        <button class="btn-danger" id="confirmPassword">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const STORAGE_KEY = 'dsa100_progress_v2';
+const CORRECT_PASSWORD = 'surendar@123';
+let state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+let currentFilter = 'all';
+let pendingAction = null;
+
+// Initialize state if empty
+if (Object.keys(state).length === 0) {
+  for(let i = 1; i <= 100; i++) {
+    state[`p${i}`] = {done: false, note: '', timestamp: null};
+  }
+  saveState();
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  refreshUI();
+}
+
+function createGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  
+  for(let i = 1; i <= 100; i++) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.problemId = i;
+    
+    const id = `p${i}`;
+    const problemData = state[id] || {done: false, note: '', timestamp: null};
+    
+    if(problemData.done) {
+      card.classList.add('solved');
+    }
+    
+    card.innerHTML = `
+      <div class="problem-number">Problem ${i}</div>
+      <input type="text" 
+             placeholder="Solution link or notes..." 
+             data-id="${id}_note" 
+             value="${problemData.note || ''}" 
+             onclick="event.stopPropagation()" />
+    `;
+    
+    grid.appendChild(card);
+  }
+}
+
+function toggleProblem(problemNum) {
+  const id = `p${problemNum}`;
+  const currentState = state[id].done;
+  
+  state[id].done = !currentState;
+  state[id].timestamp = new Date().toISOString();
+  
+  // Update card appearance
+  const card = document.querySelector(`[data-problem-id="${problemNum}"]`);
+  if(state[id].done) {
+    card.classList.add('solved');
+  } else {
+    card.classList.remove('solved');
+  }
+  
+  saveState();
+}
+
+function updateNote(problemId, note) {
+  state[problemId].note = note.trim();
+  saveState();
+}
+
+function refreshUI() {
+  const solved = Object.values(state).filter(x => x.done).length;
+  const remaining = 100 - solved;
+  const percentage = Math.round((solved / 100) * 100);
+  
+  document.getElementById('count').textContent = solved;
+  document.getElementById('remaining').textContent = remaining;
+  document.getElementById('percentage').textContent = percentage + '%';
+  document.getElementById('bar').style.width = percentage + '%';
+  
+  // Update filter counts
+  document.getElementById('solvedCount').textContent = solved;
+  document.getElementById('unsolvedCount').textContent = remaining;
+  
+  applyFilter();
+}
+
+function applyFilter() {
+  const cards = document.querySelectorAll('.card');
+  const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+  
+  cards.forEach(card => {
+    const problemNum = card.dataset.problemId;
+    const isSolved = state[`p${problemNum}`].done;
+    const problemText = card.textContent.toLowerCase();
+    const noteText = (state[`p${problemNum}`].note || '').toLowerCase();
+    
+    let show = true;
+    
+    // Filter by status
+    if(currentFilter === 'solved' && !isSolved) show = false;
+    if(currentFilter === 'unsolved' && isSolved) show = false;
+    
+    // Filter by search
+    if(searchTerm && !problemText.includes(searchTerm) && !noteText.includes(searchTerm)) {
+      show = false;
+    }
+    
+    card.style.display = show ? 'block' : 'none';
+  });
+}
+
+function showPasswordModal(action) {
+  pendingAction = action;
+  document.getElementById('passwordModal').classList.remove('hidden');
+  document.getElementById('passwordInput').focus();
+}
+
+function hidePasswordModal() {
+  document.getElementById('passwordModal').classList.add('hidden');
+  document.getElementById('passwordInput').value = '';
+  pendingAction = null;
+}
+
+function executeProtectedAction() {
+  const password = document.getElementById('passwordInput').value;
+  
+  if(password === CORRECT_PASSWORD) {
+    if(pendingAction === 'clear') {
+      clearAllProgress();
+    } else if(pendingAction === 'markAll') {
+      markAllSolved();
+    }
+    hidePasswordModal();
+  } else {
+    alert('❌ Incorrect password! Please try again.');
+    document.getElementById('passwordInput').value = '';
+    document.getElementById('passwordInput').focus();
+  }
+}
+
+function clearAllProgress() {
+  for(let i = 1; i <= 100; i++) {
+    state[`p${i}`] = {done: false, note: '', timestamp: null};
+  }
+  saveState();
+  createGrid();
+  alert('✅ All progress cleared successfully!');
+}
+
+function markAllSolved() {
+  const timestamp = new Date().toISOString();
+  for(let i = 1; i <= 100; i++) {
+    state[`p${i}`].done = true;
+    state[`p${i}`].timestamp = timestamp;
+  }
+  saveState();
+  createGrid();
+  alert('🎉 All problems marked as solved!');
+}
+
+// Event Listeners
+document.addEventListener('DOMContentLoaded', function() {
+  createGrid();
+  refreshUI();
+});
+
+// Grid click handler
+document.getElementById('grid').addEventListener('click', function(e) {
+  const card = e.target.closest('.card');
+  if(!card) return;
+  
+  const problemNum = parseInt(card.dataset.problemId);
+  toggleProblem(problemNum);
+});
+
+// Note input handler
+document.getElementById('grid').addEventListener('input', function(e) {
+  if(e.target.matches('input[type="text"]')) {
+    const problemId = e.target.dataset.id.replace('_note', '');
+    updateNote(problemId, e.target.value);
+  }
+});
+
+// Filter buttons
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    currentFilter = this.dataset.filter;
+    applyFilter();
+  });
+});
+
+// Search box
+document.getElementById('searchBox').addEventListener('input', applyFilter);
+
+// Control buttons
+document.getElementById('clear').addEventListener('click', () => {
+  showPasswordModal('clear');
+});
+
+document.getElementById('markAll').addEventListener('click', () => {
+  if(confirm('Mark all 100 problems as solved?')) {
+    showPasswordModal('markAll');
+  }
+});
+
+document.getElementById('export').addEventListener('click', function() {
+  const exportData = {
+    ...state,
+    exportDate: new Date().toISOString(),
+    totalSolved: Object.values(state).filter(x => x.done).length
+  };
+  
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `dsa100_progress_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  alert('📁 Progress exported successfully!');
+});
+
+document.getElementById('importBtn').addEventListener('click', function() {
+  document.getElementById('importFile').click();
+});
+
+document.getElementById('importFile').addEventListener('change', async function(e) {
+  const file = e.target.files[0];
+  if(!file) return;
+  
+  try {
+    const text = await file.text();
+    const importedData = JSON.parse(text);
+    
+    // Validate imported data
+    const validKeys = Object.keys(importedData).filter(key => key.startsWith('p') && parseInt(key.slice(1)) <= 100);
+    
+    if(validKeys.length > 0) {
+      if(confirm(`Import progress? This will overwrite current data.\nFound ${validKeys.length} problem entries.`)) {
+        // Merge imported data
+        for(let key of validKeys) {
+          if(importedData[key] && typeof importedData[key] === 'object') {
+            state[key] = {
+              done: !!importedData[key].done,
+              note: importedData[key].note || '',
+              timestamp: importedData[key].timestamp || new Date().toISOString()
+            };
+          }
+        }
+        
+        saveState();
+        createGrid();
+        alert('✅ Progress imported successfully!');
+      }
+    } else {
+      alert('❌ Invalid file format. Please select a valid progress file.');
+    }
+  } catch(error) {
+    alert('❌ Failed to import: ' + error.message);
+  }
+  
+  // Reset file input
+  this.value = '';
+});
+
+// Password modal handlers
+document.getElementById('cancelPassword').addEventListener('click', hidePasswordModal);
+document.getElementById('confirmPassword').addEventListener('click', executeProtectedAction);
+
+// Enter key in password input
+document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+  if(e.key === 'Enter') {
+    executeProtectedAction();
+  }
+});
+
+// Close modal when clicking outside
+document.getElementById('passwordModal').addEventListener('click', function(e) {
+  if(e.target === this) {
+    hidePasswordModal();
+  }
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+  if(e.ctrlKey || e.metaKey) {
+    switch(e.key) {
+      case 's':
+        e.preventDefault();
+        document.getElementById('export').click();
+        break;
+      case 'f':
+        e.preventDefault();
+        document.getElementById('searchBox').focus();
+        break;
+    }
+  }
+});
+
+// Auto-save notification
+let saveTimeout;
+function showSaveNotification() {
+  clearTimeout(saveTimeout);
+  
+  // Create or update notification
+  let notification = document.getElementById('saveNotification');
+  if(!notification) {
+    notification = document.createElement('div');
+    notification.id = 'saveNotification';
+    notification.style.cssText = `
+      position:fixed;
+      top:20px;
+      right:20px;
+      background:#27ae60;
+      color:white;
+      padding:10px 15px;
+      border-radius:8px;
+      font-size:14px;
+      z-index:1000;
+      opacity:0;
+      transition:opacity 0.3s ease;
+    `;
+    document.body.appendChild(notification);
+  }
+  
+  notification.textContent = '💾 Progress saved!';
+  notification.style.opacity = '1';
+  
+  saveTimeout = setTimeout(() => {
+    notification.style.opacity = '0';
+  }, 2000);
+}
+
+// Override saveState to show notification
+const originalSaveState = saveState;
+saveState = function() {
+  originalSaveState();
+  showSaveNotification();
+};
+</script>
+</body>
+</html>
